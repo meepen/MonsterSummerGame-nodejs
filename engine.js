@@ -11,6 +11,7 @@ module.exports = function(gameid, steamid, token)
 	this.m_Token = token;
 	this.ResetAbilities();
 	this.m_Movements = [];
+	this.m_Upgrades = [];
 };
 
 var engine = module.exports;
@@ -113,10 +114,28 @@ engine.prototype.SendAbilities = function(callback)
 	);
 }
 
+engine.prototype.DoUpgrades = function(callback)
+{
+	this.RequestURL(this.BuildURL( 'ITowerAttackMiniGameService', 'ChooseUpgrade', true ),
+		callback,
+		{
+			access_token: this.m_Token,
+			format: "json",
+			input_json: JSON.stringify({
+				gameid: this.m_GameID,
+				upgrades: this.m_Upgrades
+			})
+		},
+		true
+	);
+	this.m_Upgrades = [];
+}
+
 engine.prototype.Process = function()
 {
 	for(var i = 0; i < this.m_Movements.length; i++)
 		this.m_Movements[i](this.m_LastData, this.m_PlayerData);
+	this.DoUpgrades(function() { });
 }
 
 engine.prototype.AddMovement = function(f)

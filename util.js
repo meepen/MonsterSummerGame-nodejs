@@ -151,3 +151,9 @@ exports.GetAbilityByName = function(n)
 		if(Abilities[i].name === n)
 			return Abilities[i].type;
 }
+exports.GetUpgradeByName = function(n)
+{
+	for(var i = Upgrades.length - 1; i >= 0; i--)
+		if(Upgrades[i].name === n)
+			return Upgrades[i].type;
+}

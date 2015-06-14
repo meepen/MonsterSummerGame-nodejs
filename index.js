@@ -101,6 +101,95 @@ e.AddMovement(function(data, ply)
 	}
 });
 
+var bakdps = [
+	util.GetUpgradeByName("Armor Piercing Round"),
+	util.GetUpgradeByName("Explosive Rounds"),
+	util.GetUpgradeByName("Railgun"),
+	util.GetUpgradeByName("New Mouse")
+];
+
+e.AddMovement(function(data, ply)
+{
+	if(ply.player_data.hp <= 0)
+	{
+		e.m_Abilities.push({
+			ability: util.GetAbilityByName("Respawn")
+		});
+	}
+});
+
+e.AddMovement(function(data, ply)
+{
+	var gold = ply.player_data.gold;
+	
+	// find best upgrade based on % (DPS)
+	
+	var Armor     = util.GetUpgradeByName("Armor Piercing Round");
+	var Explosion = util.GetUpgradeByName("Explosive Rounds");
+	var RailGun   = util.GetUpgradeByName("Railgun");
+	var NewMouse  = util.GetUpgradeByName("New Mouse");
+	
+	var goldperdps = [];
+	goldperdps[0] = ply.tech_tree.upgrades[Armor].cost_for_next_level;
+	if(ply.tech_tree.upgrades[Armor].level >= 10)
+	{
+		goldperdps[1] = ply.tech_tree.upgrades[Explosion].cost_for_next_level / 10;
+		if(ply.tech_tree.upgrades[Explosion].level >= 10)
+		{
+			goldperdps[2] = ply.tech_tree.upgrades[RailGun].cost_for_next_level / 100;
+			if(ply.tech_tree.upgrades[RailGun].level >= 10)
+			{
+				goldperdps[3] = ply.tech_tree.upgrades[NewMouse].cost_for_next_level / 1000;
+			}
+		}
+	}
+	
+	var best = 100000000000000;
+	var best_id = -1;
+	for(var i = 0; i < goldperdps.length; i++)
+	{
+		if(goldperdps[i] < best)
+		{
+			best = goldperdps[i];
+			best_id = bakdps[i];
+		}
+	}
+	
+	if(ply.tech_tree.upgrades[best_id].cost_for_next_level < ply.player_data.gold)
+	{
+		e.m_Upgrades.push(best_id);
+		console.log("upgrading " + best_id);
+		gold -= ply.tech_tree.upgrades[best_id].cost_for_next_level;
+	}
+	
+	// upgrade to 10-10-10 armor
+	
+	if(ply.tech_tree.upgrades[util.GetUpgradeByName("Light Armor")].level < 10)
+	{
+		if(ply.tech_tree.upgrades[util.GetUpgradeByName("Light Armor")].cost_for_next_level <= gold)
+		{
+			console.log("upgrading Light Armor");
+			e.m_Upgrades.push(util.GetUpgradeByName("Light Armor"));
+		}
+	}
+	else if(ply.tech_tree.upgrades[util.GetUpgradeByName("Heavy Armor")].level < 10)
+	{
+		if(ply.tech_tree.upgrades[util.GetUpgradeByName("Heavy Armor")].cost_for_next_level <= gold)
+		{
+			console.log("upgrading Heavy Armor");
+			e.m_Upgrades.push(util.GetUpgradeByName("Heavy Armor"));
+		}
+	}
+	else if(ply.tech_tree.upgrades[util.GetUpgradeByName("Energy Shields")].level < 10)
+	{
+		if(ply.tech_tree.upgrades[util.GetUpgradeByName("Energy Shields")].cost_for_next_level <= gold)
+		{
+			console.log("upgrading Energy Shields");
+			e.m_Upgrades.push(util.GetUpgradeByName("Energy Shields"));
+		}
+	}
+});
+
 setInterval(function()
 {
 	e.Tick();
