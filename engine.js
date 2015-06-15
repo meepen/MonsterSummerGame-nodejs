@@ -130,14 +130,18 @@ engine.prototype.RequestURL = function(url, callback, get, ispost)
 	};
 	if(ispost && vars)
 		options.headers["Content-Length"] = vars.length;
-	var r = which.request(options, function(e)
+	var r;
+	r = which.request(options, function(e)
 	{
-		var total = "";
-		e.on("data", function(chunk) { total += chunk.toString(); });
-		e.on("end", function()
+		if(e.statusCode == 200)
 		{
-			callback(total);
-		});
+			var total = "";
+			e.on("data", function(chunk) { total += chunk.toString(); });
+			e.on("end", function()
+			{
+				callback(total);
+			});
+		}
 	});
 	if(ispost && vars)
 	{

@@ -313,7 +313,7 @@ e.AddMovement(function(data, ply)
 	
 	UseAbilityIfAble(ply, "Treasure!");
 	
-	if(data.game_data.level % 200 != 0)
+	if(data.game_data.level % 250 != 0)
 	{
 		// medics
 		if(ply.player_data.hp / ply.tech_tree.max_hp < .4)
