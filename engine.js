@@ -3,6 +3,7 @@ var hs = require("https");
 var q = require("querystring");
 var u = require("url");
 var util = require("./util.js");
+var fs = require("fs");
 
 module.exports = function(gameid, steamid, token) 
 {
@@ -12,12 +13,79 @@ module.exports = function(gameid, steamid, token)
 	this.ResetAbilities();
 	this.m_Movements = [];
 	this.m_Upgrades = [];
-	this.ticking = false;
 	
 	this.UseBadgePoints(function() {});
+	
+	var inst = this;
+	this.ticking = true;
+	this.GetTuningData(function(c) {
+		inst.m_Tuning = JSON.parse(JSON.parse(c).response.json);
+		fs.writeFile("xd.txt", JSON.stringify(inst.m_Tuning), function() { });
+		inst.ticking = false;
+		console.log("Initialized!");
+	});
 };
 
 var engine = module.exports;
+
+engine.prototype.GetDPSUpgrades = function(id)
+{
+	var ret = [];
+	for(var k in this.m_Tuning.upgrades)
+	{
+		var v = this.m_Tuning.upgrades[k];
+		if(parseInt(v.type) == 2) // damage
+		{
+			ret.push(parseInt(k));
+		}
+	}
+	return ret;
+}
+
+engine.prototype.IsUpgradeUnlocked = function(upgr)
+{
+	var v = this.m_Tuning.upgrades[upgr];
+	var depend = v.required_upgrade;
+	var ply = this.m_PlayerData;
+	if(!depend || ply.tech_tree.upgrades[depend]
+		&& ply.tech_tree.upgrades[depend].level >= v.required_upgrade_level)
+	{
+		return true;
+	}
+	return false;
+}
+
+engine.prototype.GetUpgradeLevel = function(upgr)
+{
+	return (this.GetUpgradeData(upgr) ? this.GetUpgradeData(upgr).level : 0);
+}
+engine.prototype.GetUpgradeCost = function(upgr)
+{
+	function CalcExponentialTuningValve( level, coefficient, base )
+	{
+		return ( coefficient * ( Math.pow( base, level ) ) );
+	}
+	
+	return (this.GetUpgradeData(upgr) ? this.GetUpgradeData(upgr).cost_for_next_level : 
+		CalcExponentialTuningValve(0, this.m_Tuning.upgrades[upgr].cost, 
+			this.m_Tuning.upgrades[upgr].cost_exponential_base)
+	);
+}
+
+
+engine.prototype.GetUpgradeData = function(upgr)
+{
+	for(var k in this.m_PlayerData.tech_tree.upgrades)
+	{
+		var v = this.m_PlayerData.tech_tree.upgrades[k];
+		if(v.upgrade == upgr) return v;
+	}
+}
+
+engine.prototype.GetMultiplier = function(upgr)
+{
+	return this.m_Tuning.upgrades[upgr].multiplier;
+}
 
 engine.prototype.ResetAbilities = function()
 {
@@ -160,15 +228,29 @@ engine.prototype.UseBadgePoints = function()
 
 engine.prototype.Process = function()
 {
-	this.ticking = false;
 	for(var i = 0; i < this.m_Movements.length; i++)
 		this.m_Movements[i](this.m_LastData, this.m_PlayerData);
 	this.DoUpgrades(function() { });
+	this.ticking = false;
 }
 
 engine.prototype.AddMovement = function(f)
 {
 	this.m_Movements.push(f);
+}
+
+engine.prototype.GetTuningData = function(callback)
+{
+	this.RequestURL(
+		this.BuildURL('ITowerAttackMiniGameService', 'GetTuningData', true, null),
+		callback, 
+		{
+			game_type: 1,
+			gameid: this.m_GameID,
+			access_token: this.m_Token,
+			format: "json"
+		}
+	);
 }
 
 engine.prototype.Tick = function(callback)

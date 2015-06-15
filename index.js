@@ -125,23 +125,21 @@ e.AddMovement(function(data, ply)
 	
 	// find best upgrade based on % (DPS)
 	
-	var Armor     = util.GetUpgradeByName("Armor Piercing Round");
-	var Explosion = util.GetUpgradeByName("Explosive Rounds");
-	var RailGun   = util.GetUpgradeByName("Railgun");
-	var NewMouse  = util.GetUpgradeByName("New Mouse");
-	
+	var dps_upgrades = e.GetDPSUpgrades();
 	var goldperdps = [];
-	goldperdps[0] = ply.tech_tree.upgrades[Armor].cost_for_next_level;
-	if(ply.tech_tree.upgrades[Armor].level >= 10)
+	
+	for(var i = dps_upgrades.length - 1; i >= 0; i--)
 	{
-		goldperdps[1] = ply.tech_tree.upgrades[Explosion].cost_for_next_level / 10;
-		if(ply.tech_tree.upgrades[Explosion].level >= 10)
+		
+		if(!e.IsUpgradeUnlocked(dps_upgrades[i]))
+			dps_upgrades.splice(i, 1);
+		else
 		{
-			goldperdps[2] = ply.tech_tree.upgrades[RailGun].cost_for_next_level / 100;
-			if(ply.tech_tree.upgrades[RailGun].level >= 10)
-			{
-				goldperdps[3] = ply.tech_tree.upgrades[NewMouse].cost_for_next_level / 1000;
-			}
+			goldperdps.push({
+				gold: e.GetUpgradeCost(dps_upgrades[i]),
+				type: dps_upgrades[i],
+				gpdps: e.GetUpgradeCost(dps_upgrades[i]) / e.GetMultiplier(dps_upgrades[i])
+			});
 		}
 	}
 	
@@ -174,80 +172,79 @@ e.AddMovement(function(data, ply)
 	var exp = 2.2;
 	var nElementalCost = Math.floor(10 * CalcExponentialTuningValve( amt, 50, exp)) / 10;
 
-	var goldperdps_element = nElementalCost / (ply.tech_tree.dps * 1.5);
+	var elems = [
+		util.GetUpgradeByName("Fire"), util.GetUpgradeByName("Water"), 
+		util.GetUpgradeByName("Earth"), util.GetUpgradeByName("Air")
+	];
+	goldperdps.push({
+		type: elems[elem],
+		gpdps: nElementalCost / (ply.tech_tree.dps * 1.5),
+		gold: nElementalCost 
+	});
 	
 	
 	var best = 100000000000000;
+	var gold_needed = 1000000000000;
 	var best_id = -1;
 	for(var i = 0; i < goldperdps.length; i++)
 	{
-		if(goldperdps[i] < best)
+		var v = goldperdps[i];
+		if(v.gpdps < best)
 		{
-			best = goldperdps[i];
-			best_id = bakdps[i];
+			best_id = v.type;
+			best = v.gpdps;
+			gold_needed = v.gold;
 		}
 	}
-	
-	if(goldperdps_element > best
-		&& ply.tech_tree.upgrades[best_id].cost_for_next_level <= gold)
+	if(gold_needed < gold)
 	{
+		gold -= gold_needed;
 		e.m_Upgrades.push(best_id);
-		gold -= ply.tech_tree.upgrades[best_id].cost_for_next_level;
-		console.log("DPS UPGRADED");
-	}
-	else if(goldperdps_element <= best
-		&& goldperdps_element <= gold)
-	{
-		var elems = [
-			util.GetUpgradeByName("Fire"), util.GetUpgradeByName("Water"), 
-			util.GetUpgradeByName("Earth"), util.GetUpgradeByName("Air")
-		];
-		e.m_Upgrades.push(elems[elem]);
-		console.log("ELEMENT UPGRADED");
+		console.log("UPGRADED: " + best_id);
 	}
 	
 	// upgrade to 10-10-5 armor
 	
-	if(ply.tech_tree.upgrades[util.GetUpgradeByName("Light Armor")].level < 10)
+	if(e.GetUpgradeData(util.GetUpgradeByName("Light Armor")).level < 10)
 	{
-		if(ply.tech_tree.upgrades[util.GetUpgradeByName("Light Armor")].cost_for_next_level <= gold)
+		if(e.GetUpgradeData(util.GetUpgradeByName("Light Armor")).cost_for_next_level <= gold)
 		{
-			gold -= ply.tech_tree.upgrades[util.GetUpgradeByName("Light Armor")].cost_for_next_level;
+			gold -= e.GetUpgradeData(util.GetUpgradeByName("Light Armor")).cost_for_next_level;
 			console.log("upgrading Light Armor");
 			e.m_Upgrades.push(util.GetUpgradeByName("Light Armor"));
 		}
 	}
-	else if(ply.tech_tree.upgrades[util.GetUpgradeByName("Heavy Armor")].level < 10)
+	else if(e.GetUpgradeData(util.GetUpgradeByName("Heavy Armor")).level < 10)
 	{
-		if(ply.tech_tree.upgrades[util.GetUpgradeByName("Heavy Armor")].cost_for_next_level <= gold)
+		if(e.GetUpgradeData(util.GetUpgradeByName("Heavy Armor")).cost_for_next_level <= gold)
 		{
-			gold -= ply.tech_tree.upgrades[util.GetUpgradeByName("Heavy Armor")].cost_for_next_level;
+			gold -= e.GetUpgradeData(util.GetUpgradeByName("Heavy Armor")).cost_for_next_level;
 			
 			console.log("upgrading Heavy Armor");
 			e.m_Upgrades.push(util.GetUpgradeByName("Heavy Armor"));
 		}
 	}
-	else if(ply.tech_tree.upgrades[util.GetUpgradeByName("Energy Shields")].level < 5)
+	else if(e.GetUpgradeData(util.GetUpgradeByName("Energy Shields")).level < 5)
 	{
-		if(ply.tech_tree.upgrades[util.GetUpgradeByName("Energy Shields")].cost_for_next_level <= gold)
+		if(e.GetUpgradeData(util.GetUpgradeByName("Energy Shields")).cost_for_next_level <= gold)
 		{
-			gold -= ply.tech_tree.upgrades[util.GetUpgradeByName("Energy Armor")].cost_for_next_level;
+			gold -= e.GetUpgradeData(util.GetUpgradeByName("Energy Shields")).cost_for_next_level;
 			
 			console.log("upgrading Energy Shields");
 			e.m_Upgrades.push(util.GetUpgradeByName("Energy Shields"));
 		}
 	}
 	
-	if(ply.tech_tree.upgrades[util.GetUpgradeByName("Auto-fire Cannon")].level < 20 
-		&& ply.tech_tree.upgrades[util.GetUpgradeByName("Auto-fire Cannon")].cost_for_next_level < gold)
+	if(e.GetUpgradeData(util.GetUpgradeByName("Auto-fire Cannon")).level < 20 
+		&& e.GetUpgradeData(util.GetUpgradeByName("Auto-fire Cannon")).cost_for_next_level < gold)
 	{
 		console.log("Upgrading Auto-fire Cannon");
 		e.m_Upgrades.push(util.GetUpgradeByName("Auto-fire Cannon"));
 	}
-	else if(ply.tech_tree.upgrades[util.GetUpgradeByName("Auto-fire Cannon")].level >= 20)
+	else if(e.GetUpgradeData(util.GetUpgradeByName("Auto-fire Cannon")).level >= 20)
 	{
-		if(ply.tech_tree.upgrades[util.GetUpgradeByName("Boss Loot")].level < 20 
-			&& ply.tech_tree.upgrades[util.GetUpgradeByName("Boss Loot")].cost_for_next_level < gold)
+		if(e.GetUpgradeData(util.GetUpgradeByName("Boss Loot")).level < 20 
+			&& e.GetUpgradeData(util.GetUpgradeByName("Boss Loot")).cost_for_next_level < gold)
 		{
 			console.log("Upgrading Boss Loot");
 			e.m_Upgrades.push(util.GetUpgradeByName("Boss Loot"));

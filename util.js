@@ -57,6 +57,10 @@ var Upgrades = [
 		name: "New Mouse"
 	},
 	{
+		type: 28,
+		name: "Titanium Mouse Button"
+	},
+	{
 		type: 7,
 		name: "Lucky Shot"
 	},
