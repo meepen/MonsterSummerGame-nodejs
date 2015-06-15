@@ -183,13 +183,14 @@ e.AddMovement(function(data, ply)
 		gold: nElementalCost 
 	});
 	
-	goldperdps.push({
-		type: util.GetUpgradeByName("Lucky Shot"),
-		gpdps: e.GetUpgradeCost(util.GetUpgradeByName("Lucky Shot")) / (
-			Math.min(1, ply.tech_tree.crit_percentage) * ply.tech_tree.dps * 1.5
-		),
-		gold: e.GetUpgradeCost(util.GetUpgradeByName("Lucky Shot"))
-	});
+	if(e.IsUpgradeUnlocked(util.GetUpgradeByName("Lucky Shot")))
+		goldperdps.push({
+			type: util.GetUpgradeByName("Lucky Shot"),
+			gpdps: e.GetUpgradeCost(util.GetUpgradeByName("Lucky Shot")) / (
+				Math.min(1, ply.tech_tree.crit_percentage) * ply.tech_tree.dps * 1.5
+			),
+			gold: e.GetUpgradeCost(util.GetUpgradeByName("Lucky Shot"))
+		});
 	
 	var best = 100000000000000;
 	var gold_needed = 1000000000000;
