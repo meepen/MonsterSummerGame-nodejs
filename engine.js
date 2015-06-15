@@ -13,6 +13,8 @@ module.exports = function(gameid, steamid, token)
 	this.m_Movements = [];
 	this.m_Upgrades = [];
 	this.ticking = false;
+	
+	this.UseBadgePoints(function() {});
 };
 
 var engine = module.exports;
@@ -132,10 +134,33 @@ engine.prototype.DoUpgrades = function(callback)
 	this.m_Upgrades = [];
 }
 
+engine.prototype.UseBadgePoints = function()
+{
+	var items = [
+		util.GetAbilityByName("Treasure!"),
+		util.GetAbilityByName("Treasure!"),
+		util.GetAbilityByName("Treasure!"),
+	]
+	for(var i = 0; i < 3000;i++)
+		items.push(util.GetAbilityByName("Crit"));
+	this.RequestURL(this.BuildURL('ITowerAttackMiniGameService', 'UseBadgePoints', true),
+		function() {},
+		{
+			input_json: JSON.stringify({
+				gameid: this.m_GameID,
+				//todo: make not shit
+				ability_items: items
+			}),
+			access_token: this.m_Token,
+			format: "json"
+		},
+		true
+	);
+}
+
 engine.prototype.Process = function()
 {
 	this.ticking = false;
-	console.log("PROCESS");
 	for(var i = 0; i < this.m_Movements.length; i++)
 		this.m_Movements[i](this.m_LastData, this.m_PlayerData);
 	this.DoUpgrades(function() { });

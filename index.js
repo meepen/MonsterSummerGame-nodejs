@@ -58,8 +58,6 @@ var GetBestTarget = function(lanes, ply)
 				else if (ability.ability == util.GetAbilityByName("Raining Gold"))
 					has_raining_gold = true;
 			}
-		if(has_raining_gold && metal_detectors < best_metal_detector)
-			continue;
 		
 		var good_metal = has_raining_gold && metal_detectors > best_metal_detector;
 		
@@ -70,8 +68,8 @@ var GetBestTarget = function(lanes, ply)
 			{
 				var e = lane.enemies[x];
 				if(!e || e.hp <= 0) continue;
-				if(e.gold <= most_gold) continue;
-				if(!good_metal && priorities[e.type] >= best_priority) continue;
+				if(priorities[e.type] > best_priority) continue;
+				else if(priorities[e.type] == best_priority && e.gold <= most_gold) continue;
 				best_priority = priorities[e.type];
 				most_gold = e.gold;
 				
@@ -240,7 +238,21 @@ e.AddMovement(function(data, ply)
 		}
 	}
 	
-	
+	if(ply.tech_tree.upgrades[util.GetUpgradeByName("Auto-fire Cannon")].level < 20 
+		&& ply.tech_tree.upgrades[util.GetUpgradeByName("Auto-fire Cannon")].cost_for_next_level < gold)
+	{
+		console.log("Upgrading Auto-fire Cannon");
+		e.m_Upgrades.push(util.GetUpgradeByName("Auto-fire Cannon"));
+	}
+	else if(ply.tech_tree.upgrades[util.GetUpgradeByName("Auto-fire Cannon")].level >= 20)
+	{
+		if(ply.tech_tree.upgrades[util.GetUpgradeByName("Boss Loot")].level < 20 
+			&& ply.tech_tree.upgrades[util.GetUpgradeByName("Boss Loot")].cost_for_next_level < gold)
+		{
+			console.log("Upgrading Boss Loot");
+			e.m_Upgrades.push(util.GetUpgradeByName("Boss Loot"));
+		}
+	}
 	
 });
 
@@ -319,7 +331,7 @@ e.AddMovement(function(data, ply)
 	{
 		var IsAbilityUsed = function(game, ply, ability)
 		{
-			var abilities = game.game_data.active_player_abilities.lanes[ply.player_data.current_lane].active_player_abilities;
+			var abilities = game.game_data.lanes[ply.player_data.current_lane].active_player_abilities;
 			
 			for(var k in abilities) 
 			{
