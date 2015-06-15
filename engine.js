@@ -66,10 +66,8 @@ engine.prototype.GetUpgradeCost = function(upgr)
 		return ( coefficient * ( Math.pow( base, level ) ) );
 	}
 	
-	return (this.GetUpgradeData(upgr) ? this.GetUpgradeData(upgr).cost_for_next_level : 
-		CalcExponentialTuningValve(0, this.m_Tuning.upgrades[upgr].cost, 
-			this.m_Tuning.upgrades[upgr].cost_exponential_base)
-	);
+	return CalcExponentialTuningValve(this.GetUpgradeData(upgr) ? this.GetUpgradeData(upgr).level : 0, this.m_Tuning.upgrades[upgr].cost, 
+			this.m_Tuning.upgrades[upgr].cost_exponential_base);
 }
 
 

@@ -138,7 +138,7 @@ e.AddMovement(function(data, ply)
 			goldperdps.push({
 				gold: e.GetUpgradeCost(dps_upgrades[i]),
 				type: dps_upgrades[i],
-				gpdps: e.GetUpgradeCost(dps_upgrades[i]) / e.GetMultiplier(dps_upgrades[i])
+				gpdps: e.GetUpgradeCost(dps_upgrades[i]) / (ply.tech_tree.base_dps * e.GetMultiplier(dps_upgrades[i]))
 			});
 		}
 	}
@@ -167,8 +167,9 @@ e.AddMovement(function(data, ply)
 		return ( coefficient * ( Math.pow( base, level ) ) );
 	}
 	
-	var amt = ply.tech_tree.damage_multiplier_fire + ply.tech_tree.damage_multiplier_water+
-		ply.tech_tree.damage_multiplier_earth+ply.tech_tree.damage_multiplier_air;
+	var amt = e.GetUpgradeLevel(util.GetUpgradeByName("Fire")) + e.GetUpgradeLevel(util.GetUpgradeByName("Water")) + 
+		e.GetUpgradeLevel(util.GetUpgradeByName("Earth")) + e.GetUpgradeLevel(util.GetUpgradeByName("Air"));
+		console.log(amt);
 	var exp = 2.2;
 	var nElementalCost = Math.floor(10 * CalcExponentialTuningValve( amt, 50, exp)) / 10;
 
@@ -178,10 +179,18 @@ e.AddMovement(function(data, ply)
 	];
 	goldperdps.push({
 		type: elems[elem],
-		gpdps: nElementalCost / (ply.tech_tree.dps * 1.5),
+		gpdps: nElementalCost / (ply.tech_tree.dps * 1.5 / 4),
 		gold: nElementalCost 
 	});
 	
+	goldperdps.push({
+		type: util.GetUpgradeByName("Lucky Shot"),
+		gpdps: e.GetUpgradeCost(util.GetUpgradeByName("Lucky Shot")) / (
+			Math.min(1, ply.tech_tree.crit_percentage) * ply.tech_tree.dps * 1.5
+		),
+		gold: e.GetUpgradeCost(util.GetUpgradeByName("Lucky Shot"))
+	});
+	console.log(goldperdps);
 	
 	var best = 100000000000000;
 	var gold_needed = 1000000000000;
