@@ -169,7 +169,7 @@ e.AddMovement(function(data, ply)
 	
 	var amt = e.GetUpgradeLevel(util.GetUpgradeByName("Fire")) + e.GetUpgradeLevel(util.GetUpgradeByName("Water")) + 
 		e.GetUpgradeLevel(util.GetUpgradeByName("Earth")) + e.GetUpgradeLevel(util.GetUpgradeByName("Air"));
-		console.log(amt);
+		
 	var exp = 2.2;
 	var nElementalCost = Math.floor(10 * CalcExponentialTuningValve( amt, 50, exp)) / 10;
 
@@ -190,7 +190,6 @@ e.AddMovement(function(data, ply)
 		),
 		gold: e.GetUpgradeCost(util.GetUpgradeByName("Lucky Shot"))
 	});
-	console.log(goldperdps);
 	
 	var best = 100000000000000;
 	var gold_needed = 1000000000000;
