@@ -12,6 +12,7 @@ module.exports = function(gameid, steamid, token)
 	this.ResetAbilities();
 	this.m_Movements = [];
 	this.m_Upgrades = [];
+	this.ticking = false;
 };
 
 var engine = module.exports;
@@ -133,6 +134,8 @@ engine.prototype.DoUpgrades = function(callback)
 
 engine.prototype.Process = function()
 {
+	this.ticking = false;
+	console.log("PROCESS");
 	for(var i = 0; i < this.m_Movements.length; i++)
 		this.m_Movements[i](this.m_LastData, this.m_PlayerData);
 	this.DoUpgrades(function() { });
@@ -145,23 +148,27 @@ engine.prototype.AddMovement = function(f)
 
 engine.prototype.Tick = function(callback)
 {
-	var inst = this;
-	var d,e;
-	this.SendAbilities(function(e) 
-	{ 
-	});
-	this.GetPlayerData(function(e) 
+	if(!this.ticking)
 	{
-		inst.m_PlayerData = JSON.parse(e).response;
-		e = !!inst.m_PlayerData;
-		if(d && e) inst.Process();
-	});
-	this.GetGameData(function(e)
-	{
-		inst.m_LastData = JSON.parse(e).response;
-		d = !!inst.m_LastData;
-		if(d && e) inst.Process();
-	});
+		this.ticking = true;
+		var inst = this;
+		this.SendAbilities(function(e) 
+		{ 
+		});
+		inst.m_LastData = false;
+		inst.m_PlayerData = false;
+		this.GetPlayerData(function(e) 
+		{
+			inst.m_PlayerData = JSON.parse(e).response;
+			if(inst.m_LastData && inst.m_PlayerData) inst.Process();
+		});
+		this.GetGameData(function(e)
+		{
+			inst.m_LastData = JSON.parse(e).response;
+			if(inst.m_LastData && inst.m_PlayerData) inst.Process();
+		});
+	}
+	
 }
 
 engine.prototype.GetPlayerData = function(callback)

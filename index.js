@@ -19,10 +19,10 @@ var g_SteamID = config.SteamID; //"76561198096703994";
 
 
 var priorities = [
-	2,
-	2,
+	2, // spawner
+	3, // creeper
 	1, // boss
-	2, 
+	2, // miniboss
 	0, // treasure
 ]
 
@@ -71,7 +71,6 @@ var GetBestTarget = function(lanes, ply)
 				var e = lane.enemies[x];
 				if(!e || e.hp <= 0) continue;
 				if(e.gold <= most_gold) continue;
-				console.log(e.type);
 				if(!good_metal && priorities[e.type] >= best_priority) continue;
 				best_priority = priorities[e.type];
 				most_gold = e.gold;
@@ -85,6 +84,7 @@ var GetBestTarget = function(lanes, ply)
 	return [best_lane, best_target];
 }
 
+// lanes and autoshoot
 e.AddMovement(function(data, ply)
 {
 	var target = GetBestTarget(data.game_data.lanes, ply);
@@ -108,6 +108,7 @@ var bakdps = [
 	util.GetUpgradeByName("New Mouse")
 ];
 
+// respawn
 e.AddMovement(function(data, ply)
 {
 	if(ply.player_data.hp <= 0)
@@ -118,6 +119,8 @@ e.AddMovement(function(data, ply)
 	}
 });
 
+
+// upgrades
 e.AddMovement(function(data, ply)
 {
 	var gold = ply.player_data.gold;
@@ -144,6 +147,38 @@ e.AddMovement(function(data, ply)
 		}
 	}
 	
+	// todo: later
+    var hashCode = function(str) {
+        var t = 0,
+            i, char;
+        if (0 === str.length) {
+            return t;
+        }
+
+        for (i = 0; i < str.length; i++) {
+            char = str.charCodeAt(i);
+            t = (t << 5) - t + char;
+            t &= t;
+        }
+
+        return t;
+    };
+
+    var elem = Math.abs(hashCode(g_SteamID) % 4);
+	
+	function CalcExponentialTuningValve( level, coefficient, base )
+	{
+		return ( coefficient * ( Math.pow( base, level ) ) );
+	}
+	
+	var amt = ply.tech_tree.damage_multiplier_fire + ply.tech_tree.damage_multiplier_water+
+		ply.tech_tree.damage_multiplier_earth+ply.tech_tree.damage_multiplier_air;
+	var exp = 2.2;
+	var nElementalCost = Math.floor(10 * CalcExponentialTuningValve( amt, 50, exp)) / 10;
+
+	var goldperdps_element = nElementalCost / (ply.tech_tree.dps * 1.5);
+	
+	
 	var best = 100000000000000;
 	var best_id = -1;
 	for(var i = 0; i < goldperdps.length; i++)
@@ -155,19 +190,31 @@ e.AddMovement(function(data, ply)
 		}
 	}
 	
-	if(ply.tech_tree.upgrades[best_id].cost_for_next_level < ply.player_data.gold)
+	if(goldperdps_element > best
+		&& ply.tech_tree.upgrades[best_id].cost_for_next_level <= gold)
 	{
 		e.m_Upgrades.push(best_id);
-		console.log("upgrading " + best_id);
 		gold -= ply.tech_tree.upgrades[best_id].cost_for_next_level;
+		console.log("DPS UPGRADED");
+	}
+	else if(goldperdps_element <= best
+		&& goldperdps_element <= gold)
+	{
+		var elems = [
+			util.GetUpgradeByName("Fire"), util.GetUpgradeByName("Water"), 
+			util.GetUpgradeByName("Earth"), util.GetUpgradeByName("Air")
+		];
+		e.m_Upgrades.push(elems[elem]);
+		console.log("ELEMENT UPGRADED");
 	}
 	
-	// upgrade to 10-10-10 armor
+	// upgrade to 10-10-5 armor
 	
 	if(ply.tech_tree.upgrades[util.GetUpgradeByName("Light Armor")].level < 10)
 	{
 		if(ply.tech_tree.upgrades[util.GetUpgradeByName("Light Armor")].cost_for_next_level <= gold)
 		{
+			gold -= ply.tech_tree.upgrades[util.GetUpgradeByName("Light Armor")].cost_for_next_level;
 			console.log("upgrading Light Armor");
 			e.m_Upgrades.push(util.GetUpgradeByName("Light Armor"));
 		}
@@ -176,19 +223,117 @@ e.AddMovement(function(data, ply)
 	{
 		if(ply.tech_tree.upgrades[util.GetUpgradeByName("Heavy Armor")].cost_for_next_level <= gold)
 		{
+			gold -= ply.tech_tree.upgrades[util.GetUpgradeByName("Heavy Armor")].cost_for_next_level;
+			
 			console.log("upgrading Heavy Armor");
 			e.m_Upgrades.push(util.GetUpgradeByName("Heavy Armor"));
 		}
 	}
-	else if(ply.tech_tree.upgrades[util.GetUpgradeByName("Energy Shields")].level < 10)
+	else if(ply.tech_tree.upgrades[util.GetUpgradeByName("Energy Shields")].level < 5)
 	{
 		if(ply.tech_tree.upgrades[util.GetUpgradeByName("Energy Shields")].cost_for_next_level <= gold)
 		{
+			gold -= ply.tech_tree.upgrades[util.GetUpgradeByName("Energy Armor")].cost_for_next_level;
+			
 			console.log("upgrading Energy Shields");
 			e.m_Upgrades.push(util.GetUpgradeByName("Energy Shields"));
 		}
 	}
+	
+	
+	
 });
+
+// abilities
+e.AddMovement(function(data, ply)
+{
+	// medics
+	
+	/*
+	this.m_Abilities.push({
+		ability: id
+	});
+	*/
+	
+	var HasAbilityItem = function(ply, id)
+	{
+		var techtree = ply.tech_tree;
+		//console.log(id);
+		for(var k in techtree.ability_items)
+		{
+			var v = techtree.ability_items[k];
+			if(v.ability == id)
+			{
+				if(v.quantity > 0)
+					return true;
+				else return false;
+			}
+		}
+		return false;
+	}
+	var HasAbility = function(ply, id)
+	{
+		return (ply.tech_tree.unlocked_abilities_bitfield & (1<<id)) != 0 || HasAbilityItem(ply, id);
+	}
+	
+	var IsAbilityActive = function(ply, id)
+	{
+		return (ply.player_data.active_abilities_bitfield & (1 << id)) != 0
+	}
+	
+	var UseAbilityIfAble = function(p, ability)
+	{
+		var id = util.GetAbilityByName(ability);
+		if(HasAbility(p, id) && !IsAbilityActive(p, id))
+		{
+			e.m_Abilities.push({
+				ability: id
+			});
+			console.log("Used " + ability);
+		}
+	}
+	
+	UseAbilityIfAble(ply, "Treasure!");
+	
+	if(data.game_data.level % 200 != 0)
+	{
+		// medics
+		if(ply.player_data.hp / ply.tech_tree.max_hp < .4)
+			UseAbilityIfAble(ply, "Medics");
+		// crit
+		UseAbilityIfAble(ply, "Crit");
+		
+		// nuke
+
+		UseAbilityIfAble(ply, "Tactical Nuke");
+		UseAbilityIfAble(ply, "Pumped Up");
+		UseAbilityIfAble(ply, "Napalm");
+		UseAbilityIfAble(ply, "Cluster Bomb");
+		UseAbilityIfAble(ply, "Good Luck Charms");
+		UseAbilityIfAble(ply, "Morale Booster");
+		UseAbilityIfAble(ply, "Good Luck Charms");
+		UseAbilityIfAble(ply, "Max Elemental Damage");
+		
+	}
+	else
+	{
+		var IsAbilityUsed = function(game, ply, ability)
+		{
+			var abilities = game.game_data.active_player_abilities.lanes[ply.player_data.current_lane].active_player_abilities;
+			
+			for(var k in abilities) 
+			{
+				var v = abilities[k];
+				if(v.ability == util.GetAbilityByName(ability))
+					return true;
+			}
+		}
+		if(!IsAbilityUsed(data, ply, "Raining Gold"))
+			UseAbilityIfAble(ply, "Raining Gold");
+	}
+	
+});
+
 
 setInterval(function()
 {

@@ -5,6 +5,22 @@ var Upgrades = [
 		name: "Light Armor"
 	},
 	{
+		type: 3,
+		name: "Fire"
+	},
+	{
+		type: 4,
+		name: "Water"
+	},
+	{
+		type: 6,
+		name: "Earth"
+	},
+	{
+		type: 5,
+		name: "Air"
+	},
+	{
 		type: 8,
 		name: "Heavy Armor"
 	},
@@ -68,6 +84,10 @@ var Abilities = [
 		name: "Change Target"
 	},
 	{
+		type: 5,
+		name: "Morale Booster"
+	},
+	{
 		type: 6,
 		name: "Good Luck Charms"
 	},
@@ -118,6 +138,10 @@ var Abilities = [
 	{
 		type: 18,
 		name: "Crit"
+	},
+	{
+		type: 19,
+		name: "Pumped Up"
 	},
 	{
 		type: 19,
