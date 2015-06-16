@@ -142,6 +142,7 @@ engine.prototype.RequestURL = function(url, callback, get, ispost)
 				callback(total);
 			});
 		}
+		else callback(false);
 	});
 	if(ispost && vars)
 	{
@@ -266,13 +267,28 @@ engine.prototype.Tick = function(callback)
 		});
 		inst.m_LastData = false;
 		inst.m_PlayerData = false;
+		var killed = false;
 		this.GetPlayerData(function(e) 
 		{
+			if(killed) return;
+			if(!e)
+			{
+				this.ticking = false;
+				killed = true;
+				return;
+			}
 			inst.m_PlayerData = JSON.parse(e).response;
 			if(inst.m_LastData && inst.m_PlayerData) inst.Process();
 		});
 		this.GetGameData(function(e)
 		{
+			if(killed) return;
+			if(!e)
+			{
+				killed = true;
+				this.ticking = false;
+				return;
+			}
 			inst.m_LastData = JSON.parse(e).response;
 			if(inst.m_LastData && inst.m_PlayerData) inst.Process();
 		});
